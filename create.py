@@ -8,8 +8,8 @@ Created on Dec 30, 2015
 import pymysql
 import json
 import sys
-#表
-def databases():   
+#库
+def databases():
     conn = pymysql.Connect(host='192.168.0.59', user='root', passwd='vrvim', charset="utf8",cursorclass=pymysql.cursors.DictCursor)
     cur = conn.cursor()
     Recoue = cur.execute("SHOW DATABASES;")
@@ -17,8 +17,9 @@ def databases():
     for i in data:
         yield  i
     cur.close()
-    conn.close() 
-def tables():    
+    conn.close()
+#表
+def tables():
     for i in databases():
         conn = pymysql.Connect(host='192.168.0.59', user='root', passwd='vrvim', db=i["Database"], charset="utf8",cursorclass=pymysql.cursors.DictCursor)
         cur = conn.cursor()
@@ -28,7 +29,8 @@ def tables():
             yield {i["Database"]:j.values()[0]}
         cur.close()
         conn.close()
-def values():  
+#关系
+def values():
     for i in tables():
         conn = pymysql.Connect(host='192.168.0.59', user='root', passwd='vrvim', db=i.keys()[0], charset="utf8",cursorclass=pymysql.cursors.DictCursor)
         cur = conn.cursor()
@@ -45,6 +47,6 @@ def values():
         if dict.keys()[0] != "performance_schema" and dict.keys()[0] != "mysql" and dict.keys()[0] != "information_schema":
             yield json.dumps(dict,encoding="UTF-8",ensure_ascii=False)
         cur.close()
-        conn.close() 
+        conn.close()
 for i in values():
-    print i 
+    print i
