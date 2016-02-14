@@ -8,6 +8,7 @@ Created on Dec 30, 2015
 import pymysql
 import json
 import sys
+#表
 def databases():   
     conn = pymysql.Connect(host='192.168.0.59', user='root', passwd='vrvim', charset="utf8",cursorclass=pymysql.cursors.DictCursor)
     cur = conn.cursor()
