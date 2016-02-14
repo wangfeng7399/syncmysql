@@ -22,3 +22,12 @@ class MySqlHelper():
         return data
         cur.close()
         conn.close()
+    def select(self,sql,dbname="mysql"):
+        self.mysql_str["db"]=dbname
+        conn = MySQLdb.Connect(**self.mysql_str)
+        cur = conn.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+        Recoue=cur.execute(sql)
+        data= cur.fetchone()
+        return data
+        cur.close()
+        conn.close()
