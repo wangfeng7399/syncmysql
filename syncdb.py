@@ -58,8 +58,8 @@ class sync():
                             createtablesql="""create table if not exists %s.%s_%s(temp bigint)"""%(self.database,jsontable["name"],i)
                             self.__helper.installsql(createtablesql,dbname)
     def Diff(self,json,tablename,dbname):
-        #当前数据库的数据
-        showtable="""SHOW FULL COLUMNS FROM %s"""%(tablename)
+        #当前数据库的数据 
+        showtable="""SHOW FULL COLUMNS FROM %s.%s"""%(dbname,tablename)
         temp=self.__helper.showsql(showtable, dbname)
         jsonlist=[]
         dblist=[]
@@ -76,7 +76,7 @@ class sync():
                     if dbfieldlist == listfield:
                         #如果相等，那么就对比字典是否相同，如果不同，则更新，如果相同，则不做处理
                         for listfieldall in json["fields"]:
-                            for dbfieldall in temp:
+                            for dbfieldall in temp:      
                                 try:
                                     del dbfieldall["Privileges"]
                                     del dbfieldall["Key"]
@@ -87,7 +87,7 @@ class sync():
                                         if dbfieldall !=  listfieldall:
                                             self.Update(dbname, tablename,listfieldall)
                                             self.UpdateFiled(dbname, tablename, listfieldall)
-
+                                
         else:
             temp=set(jsonlist)-set(dblist)
             for tempfile in temp:
@@ -96,34 +96,37 @@ class sync():
                         self.Inset(dbname, tablename, field)
                         self.UpdateFiled(dbname, tablename, field)
     def PrimaryKey(self,json,tablename,dbname):
-        showtable="""SHOW FULL COLUMNS FROM %s"""%(tablename)
+        showtable="""SHOW FULL COLUMNS FROM %s.%s"""%(dbname,tablename)
         temp=self.__helper.showsql(showtable, dbname)
-        delsql=""
-        list=[]
         for k,v in json.items():
             if k =="keyFileds":
                 for dbkey in temp:
                     if dbkey["Key"] == "PRI":
-                        if len(json["keyFileds"])==2:
-                            delsql="""ALTER TABLE %s.%s DROP PRIMARY KEY ,ADD PRIMARY KEY (%s,%s)"""%(dbname,tablename,json["keyFileds"][0],json["keyFileds"][1])
-                        elif len(json["keyFileds"])==3:
-                            delsql="""ALTER TABLE %s.%s DROP PRIMARY KEY ,ADD PRIMARY KEY (%s,%s,%s)"""%(dbname,tablename,json["keyFileds"][0],json["keyFileds"][1],json["keyFileds"][2])
-                        elif len(json["keyFileds"])==4:
-                            delsql="""ALTER TABLE %s.%s DROP PRIMARY KEY ,ADD PRIMARY KEY (%s,%s,%s,%s)"""%(dbname,tablename,json["keyFileds"][0],json["keyFileds"][1],json["keyFileds"][2],json["keyFileds"][3])
-                        elif len(json["keyFileds"])==4:
-                            delsql="""ALTER TABLE %s.%s DROP PRIMARY KEY ,ADD PRIMARY KEY (%s,%s,%s,%s,%s)"""%(dbname,tablename,json["keyFileds"][0],json["keyFileds"][1],json["keyFileds"][2],json["keyFileds"][3],json["keyFileds"][4])
-                        if delsql !="":
-                            self.__helper.installsql(delsql,dbname)
+                        primary=",".join(x for x in json["keyFileds"])
+                        dbsql="""ALTER TABLE {0}.{1} DROP PRIMARY KEY ,ADD PRIMARY KEY({2})""".format(dbname,tablename,primary)
+                        self.__helper.installsql(dbsql,dbname)
     def Delete(self,tablename,dbname):
         try:
-            showtable="""SHOW FULL COLUMNS FROM %s"""%(tablename)
+            showtable="""SHOW FULL COLUMNS FROM %s.%s"""%(dbname,tablename)
             temp=self.__helper.showsql(showtable, dbname)
-            for delfield in temp:
+            for delfield in temp: 
                 if delfield["Field"] == "temp":
                     altertablesql="""alter table %s.%s drop column temp"""%(dbname,tablename)
                     self.__helper.installsql(altertablesql,dbname)
         except:
             pass
+    def Index(self,json,tablename,dbname):
+        for indexk,indexv in json.items():
+            if indexk=="indexs":
+                for vluer in indexv:
+                    try:
+                        delindex="""alter table {0}.{1} drop index {2}""".format(dbname,tablename,vluer["name"])
+                        self.__helper.installsql(delindex, dbname)
+                    except Exception,e:
+                        pass
+                    key=','.join(x for x in vluer["fields"])
+                    indexsql="""alter table {0}.{1}  add index {2}({3})""".format(dbname,tablename,vluer["name"],key)
+                    self.__helper.installsql(indexsql, dbname)
     def Update(self,dbname,tablename,field):
         if field["Null"] == "NO":
             if field["Default"] != "null":
@@ -182,7 +185,7 @@ class sync():
     def DiffTable(self,dbname):
         #当前数据库的表
         tablelist=self.AllTable(dbname)
-        #json中文件的表
+        #json中文件的表       
         for jsontable in self.installinfo["tables"]:
             for table in tablelist:
                 if jsontable["shard"] == "1":
@@ -193,6 +196,7 @@ class sync():
                         self.Install(jsontable,jsontable["name"], dbname)
                         self.InstallHost(jsontable["name"],dbname)
                         self.delete(dbname)
+                        self.Index(jsontable,jsontable["name"], dbname)
                 else:
                     for i in xrange(int(jsontable["shard"])):
                         temp="%s_%s"%(jsontable["name"],i)
@@ -203,6 +207,7 @@ class sync():
                             self.Install(jsontable,jsontable["name"],dbname)
                             self.InstallHost(jsontable["name"],dbname)
                             self.delete(dbname)
+                            self.Index(jsontable,temp, dbname)
     def Install(self,json,tablename,dbname):
         try:
             for k,v in json.items():
@@ -211,7 +216,7 @@ class sync():
                     for temp in v:
                         fields = ','.join(['`{0}`'.format(x['field']) for x in temp])
                         values = ','.join(['"{0}"'.format(x['value']) for x in temp])
-                        sql = 'INSERT INTO `{0}`.`{1}`({2})VALUES({3})'.format(dbname, tablename, fields, values)
+                        sql = 'INSERT INTO `{0}`.`{1}`({2})VALUES({3})'.format(dbname, tablename, fields, values)        
                         self.__helper.installsql(sql,dbname)
         except Exception,e:
             pass
@@ -244,7 +249,7 @@ class table():
             self.installinfo=json.loads(configinfo)
         self.__helper=sqlhelper.MySqlHelper()
     def AppTables(self):
-
+        
         tables=self.installinfo["tables"]
         for table in tables:
             for version in table["serviceVersion"]:
@@ -252,7 +257,7 @@ class table():
             sql="""insert into IM_DBCONFIG_APPTABLE(appServerID,appServerVersion,tableName) values('{0}','{1}','{2}')""".format(table["service"],sv,table["name"])
             self.__helper.installsql(sql,'IM_DBCONFIG')
     def DateSource(self):
-
+        
         try:
             remark=self.installinfo["remark"]
             database=self.installinfo["database"]
@@ -262,7 +267,7 @@ class table():
             sql="""insert into IM_DBCONFIG_DATASOURCE(dataSourceID,remark) values('{0}','{1}')""".format(database," ")
         self.__helper.installsql(sql,'IM_DBCONFIG')
     def DateSourceSub(self):
-
+        
         try:
             database=self.installinfo["database"]
             ip=self.__helper.mysql_str["host"]
@@ -273,7 +278,7 @@ class table():
         except Exception,e:
             print e
     def Tableds(self):
-
+        
         tables=self.installinfo["tables"]
         database=self.installinfo["database"]
         for table in tables:
@@ -292,14 +297,14 @@ class table():
                     apptableid="""select appTableID from IM_DBCONFIG_APPTABLE where appServerID= '{0}'and tableName='{1}' and appServerVersion='{2}'""".format(table["service"],table["name"],sv)
                     id=self.__helper.select(apptableid,'IM_DBCONFIG')
                     sql="insert into IM_DBCONFIG_TABLEDS(appTableID,tableSegName,dataSourceID) values({0},'{1}','{2}')".format(id["appTableID"],tablename,database)
-                    self.__helper.installsql(sql,'IM_DBCONFIG')
+                    self.__helper.installsql(sql,'IM_DBCONFIG')      
 if __name__ ==  "__main__":
     files=os.listdir("/data/im/database/dbsql/")
     os.chdir("/data/im/database/dbsql/")
     for file in files:
             print file
             t=sync(file)
-            t.CreateDB()
+            t.CreateDB()      
             t.CreteTable(t.database)
             t.DiffTable(t.database)
     for file in files:
@@ -307,5 +312,7 @@ if __name__ ==  "__main__":
             t=table(file)
             t.AppTables()
             t.DateSource()
-            t.DateSourceSub()
+            t.DateSourceSub() 
             t.Tableds()
+
+      
