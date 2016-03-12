@@ -9,6 +9,7 @@ class MySqlHelper():
         self.mysql_str["db"]=dbname
         conn = MySQLdb.Connect(**self.mysql_str)
         cur = conn.cursor()
+        print sql
         Recoue=cur.execute(sql)
         conn.commit()
         cur.close()
@@ -17,6 +18,7 @@ class MySqlHelper():
         self.mysql_str["db"]=dbname
         conn = MySQLdb.Connect(**self.mysql_str)
         cur = conn.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+        print sql
         Recoue=cur.execute(sql)
         data= cur.fetchall()
         return data

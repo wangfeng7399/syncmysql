@@ -100,11 +100,13 @@ class sync():
         temp=self.__helper.showsql(showtable, dbname)
         for k,v in json.items():
             if k =="keyFileds":
-                for dbkey in temp:
-                    if dbkey["Key"] == "PRI":
-                        primary=",".join(x for x in json["keyFileds"])
-                        dbsql="""ALTER TABLE {0}.{1} DROP PRIMARY KEY ,ADD PRIMARY KEY({2})""".format(dbname,tablename,primary)
-                        self.__helper.installsql(dbsql,dbname)
+                if len(json["keyFileds"]) != 0:
+                    primary=",".join(x for x in json["keyFileds"])
+                    dbsql="""ALTER TABLE {0}.{1} ADD PRIMARY KEY({2})""".format(dbname,tablename,primary)
+                    for dbkey in temp:
+                        if dbkey["Key"] == "PRI":
+                            dbsql="""ALTER TABLE {0}.{1} DROP PRIMARY KEY ,ADD PRIMARY KEY({2})""".format(dbname,tablename,primary)
+                    self.__helper.installsql(dbsql,dbname)
     def Delete(self,tablename,dbname):
         try:
             showtable="""SHOW FULL COLUMNS FROM %s.%s"""%(dbname,tablename)
@@ -204,7 +206,7 @@ class sync():
                             self.Diff(jsontable,temp, dbname)
                             self.Delete(temp, dbname)
                             self.PrimaryKey(jsontable,temp, dbname)
-                            self.Install(jsontable,jsontable["name"],dbname)
+                            self.Install(jsontable,temp,dbname)
                             self.InstallHost(jsontable["name"],dbname)
                             self.delete(dbname)
                             self.Index(jsontable,temp, dbname)
@@ -212,14 +214,18 @@ class sync():
         try:
             for k,v in json.items():
                 if k == "initDatas":
-                    self.__helper.installsql("TRUNCATE table %s"%(tablename),dbname)
-                    for temp in v:
-                        fields = ','.join(['`{0}`'.format(x['field']) for x in temp])
-                        values = ','.join(['"{0}"'.format(x['value']) for x in temp])
-                        sql = 'INSERT INTO `{0}`.`{1}`({2})VALUES({3})'.format(dbname, tablename, fields, values)        
-                        self.__helper.installsql(sql,dbname)
+                    if len(json["initDatas"]) != 0:
+                        self.__helper.installsql("TRUNCATE table %s.%s"%(dbname,tablename),dbname)
+                        for temp in json["initDatas"]:
+                            fields = ','.join(['`{0}`'.format(x['field']) for x in temp])
+                            values = ','.join(['"{0}"'.format(x['value']) for x in temp])
+                            sql = 'INSERT INTO `{0}`.`{1}`({2})VALUES({3})'.format(dbname, tablename, fields, values)        
+                            try:
+                                self.__helper.installsql(sql,dbname)
+                            except Exception,e:
+                                print e
         except Exception,e:
-            pass
+            print e
     def InstallHost(self,tablename,dbname):
         if tablename=="CEMS_SERVER":
             self.__helper.installsql("TRUNCATE table %s"%("CEMS_SERVER"),"IM_CONFIG")
@@ -298,6 +304,7 @@ class table():
                     id=self.__helper.select(apptableid,'IM_DBCONFIG')
                     sql="insert into IM_DBCONFIG_TABLEDS(appTableID,tableSegName,dataSourceID) values({0},'{1}','{2}')".format(id["appTableID"],tablename,database)
                     self.__helper.installsql(sql,'IM_DBCONFIG')      
+
 if __name__ ==  "__main__":
     files=os.listdir("/data/im/database/dbsql/")
     os.chdir("/data/im/database/dbsql/")
@@ -314,5 +321,9 @@ if __name__ ==  "__main__":
             t.DateSource()
             t.DateSourceSub() 
             t.Tableds()
-
-      
+'''
+t=sync("/data/database/dbsql/IM_ENTERPRISE.json")
+t.CreateDB()      
+t.CreteTable(t.database)
+t.DiffTable(t.database)  
+'''   
