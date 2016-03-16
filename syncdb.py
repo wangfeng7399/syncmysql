@@ -106,7 +106,10 @@ class sync():
                     for dbkey in temp:
                         if dbkey["Key"] == "PRI":
                             dbsql="""ALTER TABLE {0}.{1} DROP PRIMARY KEY ,ADD PRIMARY KEY({2})""".format(dbname,tablename,primary)
-                    self.__helper.installsql(dbsql,dbname)
+                    try:
+                        self.__helper.installsql(dbsql,dbname)
+                    except Exception,e:
+                        pass
     def Delete(self,tablename,dbname):
         try:
             showtable="""SHOW FULL COLUMNS FROM %s.%s"""%(dbname,tablename)
