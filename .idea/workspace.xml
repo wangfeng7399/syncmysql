@@ -35,9 +35,15 @@
         <entry file="file://$PROJECT_DIR$/create.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="-3">
+<<<<<<< HEAD
               <caret line="1" column="17" selection-start-line="1" selection-start-column="17" selection-end-line="1" selection-end-column="17" />
               <folding>
                 <element signature="e#88#102#0" expanded="true" />
+=======
+              <caret line="0" column="17" selection-start-line="0" selection-start-column="17" selection-end-line="0" selection-end-column="17" />
+              <folding>
+                <element signature="e#87#101#0" expanded="true" />
+>>>>>>> isuse1
               </folding>
             </state>
           </provider>
@@ -295,9 +301,15 @@
     <entry file="file://$PROJECT_DIR$/create.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-3">
+<<<<<<< HEAD
           <caret line="1" column="17" selection-start-line="1" selection-start-column="17" selection-end-line="1" selection-end-column="17" />
           <folding>
             <element signature="e#88#102#0" expanded="true" />
+=======
+          <caret line="0" column="17" selection-start-line="0" selection-start-column="17" selection-end-line="0" selection-end-column="17" />
+          <folding>
+            <element signature="e#87#101#0" expanded="true" />
+>>>>>>> isuse1
           </folding>
         </state>
       </provider>
